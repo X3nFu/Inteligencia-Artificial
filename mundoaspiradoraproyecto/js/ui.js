@@ -15,6 +15,7 @@
   var ctrl = {
     inicio: $('inicio'),
     suciedad: $('suciedad'),
+    plano: $('plano'),
     obstaculo: $('obstaculo'),
     duracionBloqueo: $('duracionBloqueo'),
     ritmo: $('ritmo'),
@@ -263,7 +264,7 @@
     ctrl.btnIniciar.textContent = enMarcha ? 'Pausar' : 'Ejecutar';
     ctrl.btnIniciar.disabled = sim.terminado;
     ctrl.btnPaso.disabled = sim.terminado || enMarcha;
-    [ctrl.inicio, ctrl.suciedad, ctrl.obstaculo, ctrl.duracionBloqueo,
+    [ctrl.inicio, ctrl.suciedad, ctrl.plano, ctrl.obstaculo, ctrl.duracionBloqueo,
      ctrl.ritmo, ctrl.meta, ctrl.intentos]
       .forEach(function (c) { c.disabled = enMarcha; });
   }
@@ -319,6 +320,7 @@
     return {
       inicio: ctrl.inicio.value,
       suciedad: ctrl.suciedad.value,
+      planoAleatorio: ctrl.plano.value === 'aleatorio',
       obstaculo: ctrl.obstaculo.value,
       duracionBloqueo: ctrl.duracionBloqueo.value,
       ritmoBasura: ctrl.ritmo.value,
@@ -364,6 +366,7 @@
     detener();
     ctrl.inicio.value = 'aleatoria';
     ctrl.suciedad.value = 'aleatoria';
+    ctrl.plano.value = 'aleatorio';
     ctrl.obstaculo.value = 'aleatorio';
     ctrl.duracionBloqueo.value = 'temporal';
     ctrl.meta.value = 'aleatoria';
@@ -395,7 +398,7 @@
     if (enMarcha) { detener(); arrancar(); }   // aplica la velocidad al vuelo
   });
 
-  [ctrl.inicio, ctrl.suciedad, ctrl.obstaculo, ctrl.duracionBloqueo,
+  [ctrl.inicio, ctrl.suciedad, ctrl.plano, ctrl.obstaculo, ctrl.duracionBloqueo,
    ctrl.ritmo, ctrl.meta].forEach(function (control) {
     control.addEventListener('change', function () { nuevoMundo(); });
   });

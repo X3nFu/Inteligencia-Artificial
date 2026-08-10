@@ -94,8 +94,8 @@ console.log('\nBateria y muelle de carga');
 })();
 
 (function () {
-  var sim = nueva({}, 5);
-  comprobar('por defecto el mundo tiene cuatro cuadriculas: A, B, C y D',
+  var sim = nueva({ planoAleatorio: false }, 5);
+  comprobar('con el plano fijo el mundo es A, B, C y D',
     sim.nombres.join('') === 'ABCD', sim.nombres.join(''));
   comprobar('el muelle esta en D', sim.celdas[sim.muelle].nombre === M.CELDA_MUELLE);
   comprobar('D se dibuja encima de B, formando una T',
@@ -117,7 +117,7 @@ console.log('\nBateria y muelle de carga');
   }
   comprobar('en D nunca aparece basura ni bloqueo', dSiempreLimpiaYLibre);
 
-  var dentro = nueva({ muelleAparte: false }, 5);
+  var dentro = nueva({ muelleAparte: false, planoAleatorio: false }, 5);
   comprobar('se puede pedir el muelle dentro de A, B o C',
     dentro.nombres.join('') === 'ABC' && dentro.muelle < 3);
   comprobar('sin D el plano vuelve a ser una linea',
@@ -461,22 +461,27 @@ console.log('\nLos movimientos son variados, no un ir y venir fijo');
 })();
 
 (function () {
-  // Nunca deshace el paso que acaba de dar si le queda otra salida: desde B,
-  // viniendo de A, sigue a C en vez de volverse.
+  // Nunca deshace el paso que acaba de dar si le queda otra salida: estando en
+  // la habitacion del medio y viniendo de un lado, sigue hacia el otro.
+  // Ojo: la del medio ya no es siempre B, depende del plano sorteado.
   var seVuelve = 0, total = 0;
   for (var s = 1; s <= 120; s++) {
     var sim = nueva({ suciedad: 'ninguna', obstaculo: 'ninguno', ritmoBasura: 'nunca',
-                      maxIntentosSinSuciedad: 14 }, s);
+                      muelleAparte: false, maxIntentosSinSuciedad: 14,
+                      costoMover: 0, costoAspirar: 0, costoEsperar: 0 }, s);
+    var medio = sim.orden[1];
     sim.ejecutarTodo();
     for (var i = 1; i < sim.historial.length; i++) {
       var anterior = sim.historial[i - 1];
       var actual = sim.historial[i];
-      if (anterior.accion === M.ACCIONES.IZQUIERDA && actual.accion === M.ACCIONES.DERECHA &&
-          actual.percepcion.indexOf('[B,') === 0) { seVuelve++; }
+      var estaEnElMedio = actual.percepcion.indexOf('[' + medio + ',') === 0;
+      var deshace = (anterior.accion === M.ACCIONES.IZQUIERDA && actual.accion === M.ACCIONES.DERECHA) ||
+                    (anterior.accion === M.ACCIONES.DERECHA && actual.accion === M.ACCIONES.IZQUIERDA);
+      if (estaEnElMedio && deshace) seVuelve++;
       total++;
     }
   }
-  comprobar('estando en B no deshace el paso que acaba de dar', seVuelve === 0,
+  comprobar('en la habitacion del medio no deshace el paso que acaba de dar', seVuelve === 0,
     'vueltas atras = ' + seVuelve + ' de ' + total);
 })();
 
@@ -558,6 +563,88 @@ console.log('\nLos movimientos son variados, no un ir y venir fijo');
 })();
 
 /* ------------------------------------------------------------------ */
+console.log('\nEl plano se sortea en cada corrida');
+(function () {
+  var ordenes = {}, anfitrionas = {};
+  for (var s = 1; s <= 3000; s++) {
+    var sim = nueva({}, s);
+    ordenes[sim.orden.join('')] = true;
+    anfitrionas[sim.anfitrionaMuelle] = true;
+  }
+  comprobar('salen las seis ordenaciones posibles de A, B y C',
+    Object.keys(ordenes).length === 6, 'ordenes = ' + Object.keys(ordenes).sort().join(' '));
+  comprobar('el muelle se cuelga de cualquiera de las tres habitaciones',
+    Object.keys(anfitrionas).length === 3, 'anfitrionas = ' + Object.keys(anfitrionas).sort().join(' '));
+
+  var fijo = nueva({ planoAleatorio: false }, 99);
+  comprobar('se puede pedir el plano fijo de siempre',
+    fijo.orden.join('') === 'ABC' && fijo.anfitrionaMuelle === 'B');
+})();
+
+(function () {
+  // El plano sorteado siempre es coherente: la vecindad va en los dos
+  // sentidos, las columnas no se repiten y el muelle cuelga de una habitacion.
+  var coherente = true, detalle = '';
+  for (var s = 1; s <= 500; s++) {
+    var sim = nueva({}, s);
+    var columnas = {};
+    sim.celdas.forEach(function (c) {
+      var clave = c.fila + ',' + c.columna;
+      if (columnas[clave]) { coherente = false; detalle = 'celdas superpuestas'; }
+      columnas[clave] = true;
+    });
+    Object.keys(sim.vecinos).forEach(function (desde) {
+      Object.keys(sim.vecinos[desde]).forEach(function (accion) {
+        var hasta = sim.vecinos[desde][accion];
+        var vuelta = Object.keys(sim.vecinos[hasta]).some(function (a) {
+          return sim.vecinos[hasta][a] === desde;
+        });
+        if (!vuelta) { coherente = false; detalle = 'vecindad sin vuelta: ' + desde + '->' + hasta; }
+      });
+    });
+    if (sim.habitaciones.indexOf(sim.anfitrionaMuelle) === -1) {
+      coherente = false; detalle = 'el muelle no cuelga de una habitacion';
+    }
+  }
+  comprobar('el plano sorteado siempre es coherente', coherente, detalle);
+})();
+
+(function () {
+  // Sea cual sea el plano, la aspiradora puede llegar a todas partes al empezar.
+  var todoAlcanzable = true;
+  for (var s = 1; s <= 500; s++) {
+    var sim = nueva({ obstaculo: 'ninguno' }, s);
+    if (sim.celdasAlcanzables().length !== sim.celdas.length) todoAlcanzable = false;
+  }
+  comprobar('con el plano sorteado y sin bloqueos, todo es alcanzable', todoAlcanzable);
+})();
+
+(function () {
+  // Y sigue resolviendolo: el agente no depende de conocer el plano de antemano.
+  var completas = 0;
+  for (var s = 1; s <= 300; s++) {
+    var sim = nueva({ ritmoBasura: ['baja','media','alta'][s % 3] }, s);
+    sim.ejecutarTodo();
+    if (/Trabajo terminado/.test(sim.resultado.titulo)) completas++;
+  }
+  comprobar('el agente se orienta en cualquier plano que le toque', completas > 270,
+    'corridas completas = ' + completas + '/300');
+})();
+
+(function () {
+  // El generador tiene que repartir bien desde la primera tirada: con semillas
+  // consecutivas el barajado salia sesgado y solo aparecian dos ordenaciones.
+  var tercios = [0, 0, 0];
+  for (var s = 1; s <= 3000; s++) {
+    tercios[Math.floor(M.crearAzar(s)() * 3)]++;
+  }
+  var minimo = Math.min.apply(null, tercios);
+  var maximo = Math.max.apply(null, tercios);
+  comprobar('la primera tirada del generador esta bien repartida',
+    maximo - minimo < 200, 'tercios = ' + tercios.join(', '));
+})();
+
+/* ------------------------------------------------------------------ */
 console.log('\nEl ritmo de aparicion es variado, no fijo');
 (function () {
   var sim = nueva({ ritmoBasura: 'media', basuraTrasLaMeta: true, meta: 999,
@@ -626,7 +713,7 @@ console.log('\nEl ritmo de aparicion es variado, no fijo');
 /* ------------------------------------------------------------------ */
 console.log('\nCuadricula ocupada');
 (function () {
-  var sim = nueva({ inicio: 'A', suciedad: 'todas', obstaculo: 'B',
+  var sim = nueva({ inicio: 'A', suciedad: 'todas', obstaculo: 'B', planoAleatorio: false,
                     ritmoBasura: 'nunca', duracionBloqueo: 'permanente' }, 7);
   comprobar('B queda marcada como ocupada', sim.celdas[1].ocupada === true);
   comprobar('desde A solo es alcanzable A', sim.celdasAlcanzables().length === 1);
@@ -660,9 +747,12 @@ console.log('\nCriterio de finalizacion por intentos sin suciedad');
 [2, 4, 7].forEach(function (limite) {
   // Sin la cuadricula D todas las casillas son habitaciones, asi que cada paso
   // cuenta como un intento y el corte cae justo en el limite.
+  // Con las acciones sin coste la bateria nunca baja, asi que el agente no se
+  // desvia a repostar y se ve el criterio (c) aislado.
   var linea = nueva({
     inicio: 'A', suciedad: 'ninguna', obstaculo: 'ninguno', muelleAparte: false,
-    ritmoBasura: 'nunca', maxIntentosSinSuciedad: limite
+    ritmoBasura: 'nunca', maxIntentosSinSuciedad: limite, planoAleatorio: false,
+    costoMover: 0, costoAspirar: 0, costoEsperar: 0
   }, 12345);
   linea.ejecutarTodo();
   comprobar('sin nada que limpiar y limite ' + limite + ', finaliza en ' + limite + ' pasos',
@@ -673,8 +763,9 @@ console.log('\nCriterio de finalizacion por intentos sin suciedad');
   // Con D en el plano, pasar por el muelle no cuenta como intento: son las
   // habitaciones las que se estan comprobando, no la base de carga.
   var conD = nueva({
-    inicio: 'A', suciedad: 'ninguna', obstaculo: 'ninguno',
-    ritmoBasura: 'nunca', maxIntentosSinSuciedad: limite
+    inicio: 'A', suciedad: 'ninguna', obstaculo: 'ninguno', planoAleatorio: false,
+    ritmoBasura: 'nunca', maxIntentosSinSuciedad: limite,
+    costoMover: 0, costoAspirar: 0, costoEsperar: 0
   }, 12345);
   conD.ejecutarTodo();
   var enHabitacion = conD.historial.filter(function (r) {

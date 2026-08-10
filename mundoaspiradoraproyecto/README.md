@@ -2,9 +2,9 @@
 
 Implementación de un **agente inteligente con medida de rendimiento** sobre el clásico
 *mundo de la aspiradora*, convertido en un **entorno dinámico**: tres habitaciones (**A**, **B**
-y **C**) en línea con la cuadrícula **D** del muelle de carga **encima de B**, bloqueos temporales
-que van y vienen, y desorden que aparece **a rachas**. Para dar el trabajo por terminado no basta
-con cumplir la meta: tiene que haber quedado **todo limpio**.
+y **C**) más la cuadrícula **D** del muelle de carga, con el **plano sorteado en cada corrida**,
+bloqueos temporales que van y vienen, y desorden que aparece **a rachas**. Para dar el trabajo por
+terminado no basta con cumplir la meta: tiene que haber quedado **todo limpio**.
 
 La simulación es gráfica y se ejecuta en el navegador.
 
@@ -18,29 +18,40 @@ Abre **`index.html`** con doble clic (Chrome, Edge, Firefox o Safari) y pulsa
 El espacio cerrado rectangular está dividido en tres localizaciones colocadas en línea:
 
 ```
-                +-------+
-                |   D   |          D = muelle de carga
-                +-------+
-        +-------+-------+-------+
-        |   A   |   B   |   C   |  habitaciones que limpiar
-        +-------+-------+-------+
+        +-------+                          +-------+
+        |   D   |                          |   D   |
+        +-------+                          +-------+
++-------+-------+-------+          +-------+-------+-------+
+|   C   |   A   |   B   |          |   B   |   C   |   A   |
++-------+-------+-------+          +-------+-------+-------+
+
+        dos de los planos posibles — se sortea en cada corrida
 ```
 
-El plano **no es una línea, sino una T**. **A**, **B** y **C** son las habitaciones que hay que
+El plano **no es una línea**: las tres habitaciones van en fila y el muelle se cuelga encima de
+una de ellas, formando una **T** o una **L**. **A**, **B** y **C** son las habitaciones que hay que
 mantener limpias. **D** es la cuadrícula del muelle: no es una habitación, ahí no se ensucia nada,
 no puede bloquearse y no cuenta para el requisito de «todo limpio».
 
-A **D solo se llega subiendo desde B**, así que **B es el paso obligado** de toda la casa: por eso
-nunca puede surgir un bloqueo nuevo sobre ella. La aspiradora usa cuatro movimientos —
-`Izquierda`, `Derecha`, `Arriba` y `Abajo` — y calcula el camino más corto cuando necesita volver
-a cargar.
+**El plano se sortea en cada corrida.** Se barajan las tres habitaciones — así que A, B y C no salen
+siempre en ese orden de izquierda a derecha — y se sortea de cuál de ellas cuelga el muelle. Salen
+las seis ordenaciones posibles y las tres posiciones del muelle, todas con la misma frecuencia.
+
+Eso cambia el problema de verdad: **el agente no puede dar por sabido el plano** ni memorizar un
+recorrido. Tiene que orientarse en el que le toque, y calcular sobre la marcha el camino más corto
+al muelle. Con la opción *«Fija»* vuelve el plano de siempre, `A | B | C` con `D` encima de `B`,
+útil para estudiar un caso concreto con calma.
+
+A la cuadrícula del muelle **solo se llega subiendo desde la habitación de la que cuelga**, así que
+esa habitación es el paso obligado hacia la recarga: por eso nunca puede surgir un bloqueo nuevo
+sobre ella. La aspiradora usa cuatro movimientos — `Izquierda`, `Derecha`, `Arriba` y `Abajo`.
 
 La aspiradora **percibe** en qué cuadrícula está, si esa cuadrícula tiene suciedad y cuánta
 batería le queda: la percepción `[localización, estado, batería]`. Puede **elegir** entre siete
 acciones: `Izquierda`, `Derecha`, `Arriba`, `Abajo`, `Aspirar`, `Cargar` y `Nada`.
 
-Todo el escenario se sortea al arrancar: la posición inicial, la suciedad, dónde cae la
-cuadrícula ocupada y cuánto dura, y la meta de limpieza.
+Todo el escenario se sortea al arrancar: **el plano**, la posición inicial, la suciedad, dónde cae
+la cuadrícula ocupada y cuánto dura, y la meta de limpieza.
 
 ### El entorno es dinámico, y el desorden va a rachas
 
@@ -129,7 +140,8 @@ estarlo. Mientras siga bloqueada, el agente no puede afirmar que todo esté limp
 | **a) Localización inicial de la aspiradora** | Aleatoria (por defecto), A, B o C |
 | **b) Suciedad inicial** | Aleatoria (por defecto), las tres, dos, una sola o ninguna |
 | **c) Intentos sin encontrar suciedad para finalizar** | De 1 a 20 |
-| Cuadrícula ocupada | Aleatoria (puede no haber ninguna), aleatoria (siempre hay una), ninguna, o fija en A, B o C. Nunca sobre B mientras sea paso obligado al muelle |
+| Distribución de las cuadrículas | Aleatoria (por defecto): se barajan A, B y C y se sortea de cuál cuelga el muelle. O fija: `A \| B \| C` con `D` encima de `B` |
+| Cuadrícula ocupada | Aleatoria (puede no haber ninguna), aleatoria (siempre hay una), ninguna, o fija en A, B o C. Nunca sobre la que da paso al muelle |
 | Duración del bloqueo | Temporal (dura entre 4 y 12 pasos y vuelve a surgir) o permanente |
 | Ritmo al que aparece basura | Poco, normal o mucho desorden, o ninguno (entorno estático). Siempre por rachas |
 | Meta de limpieza | Aleatoria entre 5 y 12, o fija en 4, 6, 8 o 12 |
@@ -199,7 +211,7 @@ no le dice dónde está el muelle ni cuánto lleva limpiado. El agente mantiene 
 
 - **el plano de la casa**, para calcular a dónde le lleva cada movimiento y cuál es el camino más
   corto al muelle;
-- **dónde está el muelle**, para poder volver a él a recargar;
+- **el plano que le ha tocado y dónde está el muelle**, para calcular el camino más corto de vuelta;
 - **si está en mitad de una recarga**, para no salir corriendo con la batería a medias;
 - **cuánta suciedad lleva aspirada**, para saber cuándo ha cumplido su meta;
 - **qué habitaciones le constan limpias** y contra cuáles ha chocado, que es lo que le permite
@@ -250,9 +262,9 @@ pruebas/pruebas.js  Pruebas automáticas del motor
 node pruebas/pruebas.js
 ```
 
-Comprueba 99 condiciones: la regla del agente, la gestión de batería y el regreso al muelle, que
-la cuadrícula D nunca se ensucia ni se bloquea, que el plano es una T y a D solo se llega subiendo desde B, que el agente usa los
-cuatro movimientos y no tira siempre para el mismo lado ni deshace el paso que acaba de dar, que
+Comprueba 106 condiciones: la regla del agente, la gestión de batería y el regreso al muelle, que
+la cuadrícula D nunca se ensucia ni se bloquea, que el plano sorteado siempre es coherente y sale con las seis ordenaciones
+posibles, que el agente se orienta en cualquiera de ellos, que usa los cuatro movimientos y no tira siempre para el mismo lado ni deshace el paso que acaba de dar, que
 sube a repostar por su cuenta al ver que está todo limpio, que el desorden aparece a intervalos
 variados con rachas y calmas, que una cuadrícula ya limpiada puede volver a ensuciarse, que el bloqueo se libera
 justo al agotarse su tiempo y que los bloqueos nuevos nunca aíslan el muelle, que una cuadrícula puede estar sucia y ocupada a la vez y que bloquearla no
@@ -269,9 +281,11 @@ configuración se queda en un bucle infinito.
   recargar, y la ronda final tranquila cuando el desorden para al cumplirse la meta.
 - **Cuadrícula ocupada en B, inicio en A.** La aspiradora queda encerrada en A y choca contra B
   hasta que el bloqueo se levanta; entonces cruza y sigue con el resto.
-- **Bloqueo permanente en B.** Como a D solo se llega subiendo desde B, la aspiradora queda
-  encerrada en A sin poder recargar nunca: acaba quedándose sin batería. Es el fallo que el bloqueo
-  temporal evita, y se ve en unos 50 pasos.
+- **Plano fijo con bloqueo permanente en B.** Como a D solo se llega subiendo desde B, la
+  aspiradora queda encerrada sin poder recargar nunca: acaba quedándose sin batería. Es el fallo que
+  el bloqueo temporal evita, y se ve en unos 50 pasos.
+- **Pulsa «Nuevo mundo» varias veces** sin ejecutar, solo para ver cómo cambia el plano: a veces
+  sale una T, a veces una L, y el muelle cuelga de una habitación distinta cada vez.
 - **Poco desorden y meta 12.** El criterio de intentos sin encontrar suciedad corta la corrida
   antes de que la meta llegue a cumplirse, aunque el piso quede limpio.
 - **Ritmo «ninguno» y suciedad «ninguna».** El entorno vuelve a ser estático y el agente finaliza

@@ -10,7 +10,7 @@
 
 <header class="cabecera">
   <h1>El Mundo de la Aspiradora</h1>
-  <p>Agente inteligente basado en modelo &middot; entorno <b>din&aacute;mico</b> con tres cuadr&iacute;culas <b>A</b>, <b>B</b> y <b>C</b>, habitaciones <b>A</b>, <b>B</b> y <b>C</b> en l&iacute;nea con el muelle de carga <b>D</b> encima de B; el desorden aparece a rachas y para terminar debe quedar <b>todo limpio</b></p>
+  <p>Agente inteligente basado en modelo &middot; entorno <b>din&aacute;mico</b> con tres cuadr&iacute;culas <b>A</b>, <b>B</b> y <b>C</b>, plano sorteado en cada corrida, el desorden aparece a rachas y para terminar debe quedar <b>todo limpio</b></p>
 </header>
 
 <main class="disposicion">
@@ -52,6 +52,15 @@
         <input type="range" id="intentos" min="1" max="25" value="16">
         <output id="intentosValor">16</output>
       </div>
+    </div>
+
+    <div class="campo">
+      <label for="plano">Distribuci&oacute;n de las cuadr&iacute;culas</label>
+      <select id="plano">
+        <option value="aleatorio" selected>Aleatoria &mdash; se sortea en cada corrida</option>
+        <option value="fijo">Fija &mdash; A, B, C con D encima de B</option>
+      </select>
+      <p class="ayuda">Se barajan las tres habitaciones y se sortea de cu&aacute;l cuelga el muelle. As&iacute; el agente no puede dar por sabido el plano: tiene que orientarse en el que le toque.</p>
     </div>
 
     <div class="campo">

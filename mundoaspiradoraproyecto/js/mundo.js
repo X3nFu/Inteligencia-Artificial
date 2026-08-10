@@ -69,7 +69,8 @@
   var CONFIG_POR_DEFECTO = {
     inicio: 'aleatoria',            // 'A' | 'B' | 'C' | 'aleatoria'
     suciedad: 'aleatoria',          // 'todas'|'una'|'dos'|'ninguna'|'aleatoria' u objeto {A,B,C}
-    muelleAparte: true,             // true: el muelle esta en la cuadricula D, encima de B
+    muelleAparte: true,             // true: el muelle esta en la cuadricula D aparte
+    planoAleatorio: true,           // sortea el orden de A, B, C y de que habitacion cuelga D
     obstaculo: 'aleatorio',         // 'aleatorio'|'aleatorio-siempre'|'ninguno'|'A'|'B'|'C'
     duracionBloqueo: 'temporal',    // 'temporal' (dura un rato) o 'permanente'
     bloqueoMin: 4,                  // duracion minima del bloqueo, en pasos
@@ -100,10 +101,23 @@
   /* Utilidades                                                          */
   /* ------------------------------------------------------------------ */
 
-  // Generador pseudoaleatorio con semilla: permite repetir exactamente una
-  // corrida (util para comparar resultados y para las pruebas).
+  /*
+   * Generador pseudoaleatorio con semilla: permite repetir exactamente una
+   * corrida (util para comparar resultados y para las pruebas).
+   *
+   * La semilla se mezcla antes de empezar. Sin esa mezcla, semillas parecidas
+   * (1, 2, 3...) producen primeras salidas parecidas, y como el sorteo del
+   * plano y de la posicion inicial se hace justo con esas primeras salidas, el
+   * mundo salia sesgado: de los seis ordenes posibles de A, B y C solo
+   * aparecian dos.
+   */
   function crearAzar(semilla) {
     var s = (semilla >>> 0) || 1;
+    s = (s ^ 0x9e3779b9) >>> 0;
+    s = Math.imul(s ^ (s >>> 16), 0x21f0aaad) >>> 0;
+    s = Math.imul(s ^ (s >>> 15), 0x735a2d97) >>> 0;
+    s = (s ^ (s >>> 15)) >>> 0;
+    if (s === 0) s = 1;
     return function () {
       s ^= s << 13; s >>>= 0;
       s ^= s >> 17;
@@ -123,28 +137,55 @@
   /*
    * El plano del mundo: que cuadriculas hay, donde se dibuja cada una y a que
    * vecina se llega con cada movimiento.
+   *
+   * Si se le pasa un generador `azar`, el plano se sortea en cada corrida:
+   *   - las tres habitaciones se barajan, asi que A, B y C no salen siempre en
+   *     ese orden de izquierda a derecha;
+   *   - el muelle D se cuelga encima de una habitacion elegida al azar, no
+   *     siempre de la del medio.
+   *
+   * Eso cambia de verdad el problema: el agente no puede dar por sabido el
+   * plano ni memorizar un recorrido, tiene que orientarse en el que le toque.
+   * Sin `azar` sale el plano fijo de siempre: A | B | C con D encima de B.
    */
-  function construirPlano(muelleAparte) {
-    var celdas = [
-      { nombre: 'A', fila: 2, columna: 1, habitacion: true },
-      { nombre: 'B', fila: 2, columna: 2, habitacion: true },
-      { nombre: 'C', fila: 2, columna: 3, habitacion: true }
-    ];
-    var vecinos = {
-      A: { Derecha: 'B' },
-      B: { Izquierda: 'A', Derecha: 'C' },
-      C: { Izquierda: 'B' }
-    };
-
-    if (muelleAparte) {
-      // D se coloca encima de B: el plano deja de ser una linea y forma una T.
-      celdas.push({ nombre: CELDA_MUELLE, fila: 1, columna: 2, habitacion: false });
-      vecinos.B[ACCIONES.ARRIBA] = CELDA_MUELLE;
-      vecinos[CELDA_MUELLE] = {};
-      vecinos[CELDA_MUELLE][ACCIONES.ABAJO] = 'B';
+  function construirPlano(muelleAparte, azar) {
+    var orden = CELDAS.slice();
+    if (azar) {
+      for (var i = orden.length - 1; i > 0; i--) {
+        var j = Math.floor(azar() * (i + 1));
+        var t = orden[i]; orden[i] = orden[j]; orden[j] = t;
+      }
     }
 
-    return { celdas: celdas, vecinos: vecinos };
+    // Las habitaciones van en fila, en el orden sorteado.
+    var celdas = orden.map(function (nombre, indice) {
+      return { nombre: nombre, fila: 2, columna: indice + 1, habitacion: true };
+    });
+
+    var vecinos = {};
+    orden.forEach(function (nombre, indice) {
+      vecinos[nombre] = {};
+      if (indice > 0) vecinos[nombre][ACCIONES.IZQUIERDA] = orden[indice - 1];
+      if (indice < orden.length - 1) vecinos[nombre][ACCIONES.DERECHA] = orden[indice + 1];
+    });
+
+    var anfitriona = null;
+    if (muelleAparte) {
+      // El muelle se cuelga encima de una habitacion: el plano forma una T
+      // (o una L, si le toca colgarse de una de las puntas).
+      anfitriona = azar ? elegir(azar, orden) : 'B';
+      celdas.push({
+        nombre: CELDA_MUELLE,
+        fila: 1,
+        columna: orden.indexOf(anfitriona) + 1,
+        habitacion: false
+      });
+      vecinos[anfitriona][ACCIONES.ARRIBA] = CELDA_MUELLE;
+      vecinos[CELDA_MUELLE] = {};
+      vecinos[CELDA_MUELLE][ACCIONES.ABAJO] = anfitriona;
+    }
+
+    return { celdas: celdas, vecinos: vecinos, orden: orden, anfitriona: anfitriona };
   }
 
   /* ------------------------------------------------------------------ */
@@ -433,9 +474,11 @@
     var azar = crearAzar(this.semilla);
     var cfg = this.config;
 
-    var plano = construirPlano(cfg.muelleAparte);
+    var plano = construirPlano(cfg.muelleAparte, cfg.planoAleatorio ? azar : null);
     this.vecinos = plano.vecinos;
     this.nombres = plano.celdas.map(function (c) { return c.nombre; });
+    this.orden = plano.orden;                 // habitaciones de izquierda a derecha
+    this.anfitrionaMuelle = plano.anfitriona; // de que habitacion cuelga el muelle
     this.habitaciones = CELDAS.slice();
 
     // a) Localizacion inicial de la aspiradora (siempre en una habitacion)
@@ -475,6 +518,8 @@
     if (cfg.muelleAparte) {
       this.muelle = this.nombres.indexOf(CELDA_MUELLE);
     } else {
+      // Sin cuadricula aparte, el muelle cae en una habitacion cualquiera a la
+      // que se pueda llegar desde donde arranca la aspiradora.
       var indiceOcupada = ocupada === null ? -1 : this.nombres.indexOf(ocupada);
       var posInicio = this.nombres.indexOf(inicio);
       var alcanzables = [];
