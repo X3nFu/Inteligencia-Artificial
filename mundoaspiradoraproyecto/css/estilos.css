@@ -1,0 +1,588 @@
+/* estilos.css — Presentacion del simulador del mundo de la aspiradora */
+
+:root {
+  --fondo: #eef1f6;
+  --superficie: #ffffff;
+  --borde: #d6dce7;
+  --texto: #1d2433;
+  --texto-suave: #5b6678;
+  --acento: #2f6df6;
+  --acento-oscuro: #1b4fd0;
+  --sucio: #8a7f74;
+  --limpio: #3fb27f;
+  --ocupado: #d5534f;
+  --sombra: 0 1px 2px rgba(20, 30, 60, .06), 0 8px 24px rgba(20, 30, 60, .07);
+  --radio: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fondo: #12161f;
+    --superficie: #1a202c;
+    --borde: #2c3444;
+    --texto: #e8ecf4;
+    --texto-suave: #9aa5b8;
+    --acento: #5b8dff;
+    --acento-oscuro: #3f74f0;
+    --sucio: #9d9186;
+    --sombra: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .35);
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0 0 3rem;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+}
+
+/* --------------------------------------------------------------- */
+/* Cabecera y estructura                                            */
+/* --------------------------------------------------------------- */
+
+.cabecera {
+  padding: 1.8rem 1.5rem 1.4rem;
+  text-align: center;
+  border-bottom: 1px solid var(--borde);
+  background: var(--superficie);
+}
+
+.cabecera h1 {
+  margin: 0 0 .3rem;
+  font-size: 1.6rem;
+  letter-spacing: -.01em;
+}
+
+.cabecera p {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: .92rem;
+}
+
+.disposicion {
+  max-width: 1180px;
+  margin: 1.5rem auto 0;
+  padding: 0 1.2rem;
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 1.2rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .disposicion { grid-template-columns: 1fr; }
+}
+
+.panel,
+.tarjeta {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 1.1rem 1.2rem;
+}
+
+.panel { position: sticky; top: 1rem; }
+
+@media (max-width: 900px) {
+  .panel { position: static; }
+}
+
+.escenario { display: grid; gap: 1.2rem; min-width: 0; }
+
+.panel h2,
+.tarjeta h2 {
+  margin: 0 0 .9rem;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--texto-suave);
+}
+
+.cabecera-tarjeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cabecera-tarjeta h2 { margin-bottom: .9rem; }
+
+/* --------------------------------------------------------------- */
+/* Controles                                                        */
+/* --------------------------------------------------------------- */
+
+.campo { margin-bottom: 1.05rem; }
+
+.campo > label {
+  display: block;
+  font-size: .84rem;
+  font-weight: 600;
+  margin-bottom: .35rem;
+}
+
+select,
+input[type="range"] {
+  width: 100%;
+  font: inherit;
+}
+
+select {
+  padding: .45rem .55rem;
+  border-radius: 8px;
+  border: 1px solid var(--borde);
+  background: var(--fondo);
+  color: var(--texto);
+}
+
+.casillas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem .9rem;
+  margin-top: .5rem;
+}
+
+.casillas label {
+  font-size: .84rem;
+  color: var(--texto-suave);
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  cursor: pointer;
+}
+
+.fila-rango {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+}
+
+.fila-rango output {
+  min-width: 4.2rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: .85rem;
+  color: var(--texto-suave);
+}
+
+.ayuda {
+  margin: .4rem 0 0;
+  font-size: .78rem;
+  line-height: 1.45;
+  color: var(--texto-suave);
+}
+
+.botones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .5rem;
+  margin-top: 1.2rem;
+}
+
+button {
+  font: inherit;
+  font-weight: 600;
+  font-size: .87rem;
+  padding: .55rem .6rem;
+  border-radius: 8px;
+  border: 1px solid var(--borde);
+  background: var(--fondo);
+  color: var(--texto);
+  cursor: pointer;
+  transition: background .15s, border-color .15s, transform .05s;
+}
+
+button:hover:not(:disabled) { border-color: var(--acento); }
+button:active:not(:disabled) { transform: translateY(1px); }
+
+button.principal {
+  background: var(--acento);
+  border-color: var(--acento);
+  color: #fff;
+}
+
+button.principal:hover:not(:disabled) { background: var(--acento-oscuro); }
+
+button:disabled { opacity: .45; cursor: not-allowed; }
+
+button.grande {
+  width: 100%;
+  padding: .7rem;
+  font-size: .95rem;
+  margin-bottom: .1rem;
+}
+
+.ayuda.centrado { text-align: center; margin-bottom: 1.3rem; }
+
+.semilla {
+  margin: .9rem 0 0;
+  font-size: .75rem;
+  color: var(--texto-suave);
+  text-align: center;
+}
+
+.semilla code {
+  background: var(--fondo);
+  padding: .1rem .35rem;
+  border-radius: 4px;
+}
+
+/* --------------------------------------------------------------- */
+/* El mundo                                                         */
+/* --------------------------------------------------------------- */
+
+/*
+ * El plano es una T: A, B y C en la fila de abajo y D encima de B. Cada
+ * cuadricula se coloca en su celda de la rejilla desde js/ui.js.
+ */
+.mundo {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, auto);
+  gap: 6px;
+  background: transparent;
+}
+
+.celda {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border: 3px solid var(--texto);
+  border-radius: 4px;
+  background: var(--superficie);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .25s;
+}
+
+/* El paso entre D y B, dibujado como un hueco en la pared que las separa. */
+.celda.muelle-aparte::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  width: 34%;
+  height: 6px;
+  transform: translateX(-50%);
+  background: var(--acento);
+  opacity: .55;
+  border-radius: 3px;
+}
+
+.celda .nombre {
+  position: absolute;
+  top: .4rem;
+  left: .55rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--texto);
+}
+
+.celda.ocupada {
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(213, 83, 79, .10) 0 10px,
+    rgba(213, 83, 79, .22) 10px 20px
+  );
+}
+
+.celda .aviso-ocupada {
+  position: absolute;
+  bottom: .5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: .66rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  color: var(--ocupado);
+  white-space: nowrap;
+}
+
+.celda.activa {
+  background: rgba(47, 109, 246, .07);
+  box-shadow: inset 0 0 0 3px var(--acento);
+}
+
+.celda.choque { animation: sacudir .3s; }
+
+@keyframes sacudir {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-5px); }
+  75%      { transform: translateX(5px); }
+}
+
+.lienzo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.aspiradora {
+  transition: opacity .2s;
+}
+
+.aspiradora.aspirando .cuerpo-aspiradora {
+  animation: vibrar .22s linear infinite;
+}
+
+@keyframes vibrar {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(0, -2px); }
+}
+
+.mota { transition: opacity .35s; }
+
+/* La basura que acaba de aparecer entra con una pequeña animacion. */
+.mota.nueva { animation: brotar .45s ease-out; transform-origin: center; }
+
+@keyframes brotar {
+  0%   { opacity: 0; transform: scale(.2) translateY(-6px); }
+  60%  { opacity: 1; transform: scale(1.25); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.muelle .rayo { opacity: .75; }
+.muelle.cargando .rayo { animation: latir .7s ease-in-out infinite; }
+
+@keyframes latir {
+  0%, 100% { opacity: .35; }
+  50%      { opacity: 1; }
+}
+
+.leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem 1.2rem;
+  margin-top: .85rem;
+  font-size: .78rem;
+  color: var(--texto-suave);
+}
+
+.leyenda span { display: inline-flex; align-items: center; gap: .35rem; }
+
+.punto {
+  width: .7rem;
+  height: .7rem;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.punto.sucio   { background: var(--sucio); }
+.punto.limpio  { background: var(--limpio); }
+.punto.ocupado { background: var(--ocupado); }
+.punto.muelle  { background: var(--acento); }
+
+.ritmo-actual { margin-left: auto; }
+.ritmo-actual b { text-transform: capitalize; }
+.ritmo-actual b.racha { color: var(--ocupado); }
+.ritmo-actual b.calma { color: var(--limpio); }
+
+/* La cuadricula D del muelle no es una habitacion: se distingue del resto. */
+.celda.muelle-aparte { background: rgba(47, 109, 246, .05); }
+.celda.muelle-aparte .nombre { color: var(--acento); }
+
+.etiqueta-estado {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: .2rem .6rem;
+  border-radius: 999px;
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  color: var(--texto-suave);
+  white-space: nowrap;
+}
+
+.etiqueta-estado.corriendo { background: rgba(47, 109, 246, .12); color: var(--acento); border-color: transparent; }
+.etiqueta-estado.exito     { background: rgba(63, 178, 127, .15); color: var(--limpio); border-color: transparent; }
+.etiqueta-estado.fallo     { background: rgba(213, 83, 79, .15);  color: var(--ocupado); border-color: transparent; }
+
+/* --------------------------------------------------------------- */
+/* Barras de bateria y meta                                         */
+/* --------------------------------------------------------------- */
+
+.barras {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: .8rem 1.4rem;
+  margin-top: .9rem;
+}
+
+.barra-titulo {
+  display: flex;
+  justify-content: space-between;
+  font-size: .76rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  margin-bottom: .25rem;
+}
+
+.barra {
+  height: .55rem;
+  border-radius: 999px;
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  overflow: hidden;
+}
+
+.relleno {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  transition: width .3s ease, background .3s;
+}
+
+.relleno.bateria { background: var(--limpio); }
+.relleno.bateria.baja { background: var(--ocupado); }
+.relleno.meta { background: var(--acento); }
+.relleno.limpias { background: var(--limpio); }
+
+/* --------------------------------------------------------------- */
+/* Resultado y marcadores                                           */
+/* --------------------------------------------------------------- */
+
+#tarjetaResultado { border-left: 4px solid var(--limpio); }
+#tarjetaResultado.fallo { border-left-color: var(--ocupado); }
+
+#tarjetaResultado h2 {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 1.05rem;
+  color: var(--texto);
+  margin-bottom: .3rem;
+}
+
+#detalleResultado { margin: 0; font-size: .88rem; color: var(--texto-suave); }
+
+.formula { margin-bottom: 1rem; }
+
+.marcadores {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .6rem;
+}
+
+@media (max-width: 620px) {
+  .marcadores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.marcador {
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: .6rem .4rem;
+  text-align: center;
+}
+
+.marcador.destacado {
+  background: rgba(47, 109, 246, .10);
+  border-color: transparent;
+}
+
+.marcador .valor {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.marcador.destacado .valor { color: var(--acento); }
+
+.marcador .nombre {
+  display: block;
+  font-size: .72rem;
+  color: var(--texto-suave);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+/* --------------------------------------------------------------- */
+/* Tabla de percepciones                                            */
+/* --------------------------------------------------------------- */
+
+.tabla-envoltura {
+  max-height: 340px;
+  overflow: auto;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+}
+
+.tabla-percepciones {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .85rem;
+}
+
+.tabla-percepciones th,
+.tabla-percepciones td {
+  padding: .45rem .7rem;
+  text-align: left;
+  border-bottom: 1px solid var(--borde);
+}
+
+.tabla-percepciones thead th {
+  position: sticky;
+  top: 0;
+  background: var(--superficie);
+  font-size: .74rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--texto-suave);
+  z-index: 1;
+}
+
+.tabla-percepciones tbody tr:last-child td { border-bottom: none; }
+.tabla-percepciones tbody tr.reciente { background: rgba(47, 109, 246, .08); }
+.tabla-percepciones tbody tr.vacia td { text-align: center; color: var(--texto-suave); padding: 1.2rem; }
+
+.col-paso { width: 3rem; }
+
+.tabla-percepciones .percepcion { font-family: "Cascadia Mono", Consolas, monospace; }
+
+.accion {
+  font-weight: 600;
+  padding: .1rem .45rem;
+  border-radius: 5px;
+  font-size: .8rem;
+  white-space: nowrap;
+}
+
+.accion.Aspirar    { background: rgba(63, 178, 127, .16); color: var(--limpio); }
+.accion.Izquierda,
+.accion.Derecha,
+.accion.Arriba,
+.accion.Abajo      { background: rgba(47, 109, 246, .14); color: var(--acento); }
+.accion.Cargar     { background: rgba(47, 109, 246, .14); color: var(--acento); }
+.accion.Nada       { background: rgba(120, 130, 150, .18); color: var(--texto-suave); }
+
+.nota { color: var(--texto-suave); font-size: .8rem; }
+.nota.choque { color: var(--ocupado); }
+.nota.aparece { color: var(--sucio); font-weight: 600; }
+.nota.bloqueo { color: var(--ocupado); font-weight: 600; }
+
+.codigo {
+  margin: 0;
+  padding: .8rem .9rem;
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: .8rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.pie {
+  margin-top: 2rem;
+  text-align: center;
+  font-size: .78rem;
+  color: var(--texto-suave);
+}
