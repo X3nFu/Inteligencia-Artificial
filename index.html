@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>El Mundo de la Aspiradora — Agente Inteligente</title>
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+<header class="cabecera">
+  <h1>El Mundo de la Aspiradora</h1>
+  <p>Agente inteligente en un entorno din&aacute;mico</p>
+</header>
+
+<!-- ----------------------------------------------------------------- -->
+<!-- Vista principal: solo el escenario y el bot&oacute;n de iniciar    -->
+<!-- ----------------------------------------------------------------- -->
+<section class="escena">
+  <div class="mundo" id="mundo"><!-- generado por js/ui.js --></div>
+
+  <div class="tarjeta">
+    <h2>Estado de la aspiradora</h2>
+
+    <div class="barras">
+      <div class="barra-bloque">
+        <div class="barra-titulo">
+          <span>Bater&iacute;a</span>
+          <span id="bateriaTexto">100%</span>
+        </div>
+        <div class="barra"><div class="relleno bateria" id="bateriaBarra"></div></div>
+      </div>
+      <div class="barra-bloque">
+        <div class="barra-titulo">
+          <span>Meta de limpieza</span>
+          <span id="metaTexto">0 / 0</span>
+        </div>
+        <div class="barra"><div class="relleno meta" id="metaBarra"></div></div>
+      </div>
+      <div class="barra-bloque">
+        <div class="barra-titulo">
+          <span>Requisito: todo limpio</span>
+          <span id="limpiasTexto">0 / 3</span>
+        </div>
+        <div class="barra"><div class="relleno limpias" id="limpiasBarra"></div></div>
+      </div>
+    </div>
+
+    <div class="leyenda">
+      <span><i class="punto sucio"></i> Suciedad</span>
+      <span><i class="punto ocupado"></i> Ocupada (temporal &mdash; y puede estar sucia)</span>
+      <span><i class="punto muelle"></i> Muelle de carga (cuadr&iacute;cula D)</span>
+      <span class="ritmo-actual">Ritmo del desorden ahora: <b id="ritmoActual">normal</b></span>
+    </div>
+  </div>
+
+  <div class="mandos">
+    <button id="btnIniciar" class="principal grande" type="button">Iniciar</button>
+    <span class="etiqueta-estado" id="etiquetaEstado">Listo</span>
+  </div>
+
+  <p class="resultado-escena" id="resultadoEscena"></p>
+</section>
+
+<!--
+  Los ajustes, las metricas y la tabla de percepciones siguen aqui, pero
+  ocultos: la pantalla de uso es solo el escenario y el boton. Los valores
+  configurables que pide el enunciado se leen de estos controles, asi que no
+  se borran; para volver a mostrarlos basta con quitar el atributo hidden.
+-->
+<main class="disposicion" id="detalles" hidden>
+
+  <!-- ------------------------------------------------------------- -->
+  <!-- Panel de configuracion                                         -->
+  <!-- ------------------------------------------------------------- -->
+  <section class="panel" aria-label="Configuraci&oacute;n">
+
+    <h2>Configuraci&oacute;n</h2>
+    <p class="ayuda">El bot&oacute;n <b>Iniciar</b> sortea siempre un escenario nuevo. Estos ajustes sirven para fijar un caso concreto y estudiarlo.</p>
+
+    <div class="campo">
+      <label for="inicio">a) Localizaci&oacute;n inicial de la aspiradora</label>
+      <select id="inicio">
+        <option value="aleatoria" selected>Aleatoria</option>
+        <option value="A">Cuadr&iacute;cula A</option>
+        <option value="B">Cuadr&iacute;cula B</option>
+        <option value="C">Cuadr&iacute;cula C</option>
+      </select>
+    </div>
+
+    <div class="campo">
+      <label for="suciedad">b) Suciedad inicial</label>
+      <select id="suciedad">
+        <option value="aleatoria" selected>Aleatoria</option>
+        <option value="todas">Las tres cuadr&iacute;culas</option>
+        <option value="dos">Dos cuadr&iacute;culas</option>
+        <option value="una">Una sola cuadr&iacute;cula</option>
+        <option value="ninguna">Ninguna</option>
+      </select>
+    </div>
+
+    <div class="campo">
+      <label for="intentos">c) Intentos sin encontrar suciedad para finalizar</label>
+      <div class="fila-rango">
+        <input type="range" id="intentos" min="1" max="25" value="16">
+        <output id="intentosValor">16</output>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label for="plano">Distribuci&oacute;n de las cuadr&iacute;culas</label>
+      <select id="plano">
+        <option value="aleatorio" selected>Aleatoria &mdash; se sortea en cada corrida</option>
+        <option value="fijo">Fija &mdash; A, B, C con D encima de B</option>
+      </select>
+      <p class="ayuda">Se barajan las tres habitaciones y se sortea de cu&aacute;l cuelga el muelle. As&iacute; el agente no puede dar por sabido el plano: tiene que orientarse en el que le toque.</p>
+    </div>
+
+    <div class="campo">
+      <label for="obstaculo">Cuadr&iacute;cula ocupada (obst&aacute;culo)</label>
+      <select id="obstaculo">
+        <option value="aleatorio" selected>Aleatoria &mdash; puede no haber ninguna</option>
+        <option value="aleatorio-siempre">Aleatoria &mdash; siempre hay una</option>
+        <option value="ninguno">Ninguna</option>
+        <option value="A">Fija en A</option>
+        <option value="B">Fija en B</option>
+        <option value="C">Fija en C</option>
+      </select>
+      <p class="ayuda">Bloquea el paso: la aspiradora choca y no puede cruzarla. Que est&eacute; ocupada <b>no significa que est&eacute; limpia</b> &mdash; la suciedad sigue ah&iacute;, y puede ensuciarse m&aacute;s mientras tanto.</p>
+    </div>
+
+    <div class="campo">
+      <label for="duracionBloqueo">Duraci&oacute;n del bloqueo</label>
+      <select id="duracionBloqueo">
+        <option value="temporal" selected>Temporal &mdash; dura un tiempo aleatorio</option>
+        <option value="permanente">Permanente &mdash; no se levanta nunca</option>
+      </select>
+      <p class="ayuda">El bloqueo no est&aacute; todo el tiempo: dura entre 4 y 12 pasos, se libera, y m&aacute;s adelante puede volver a surgir en otra cuadr&iacute;cula.</p>
+    </div>
+
+    <div class="campo">
+      <label for="ritmo">Ritmo al que aparece basura</label>
+      <select id="ritmo">
+        <option value="baja">Poco desorden</option>
+        <option value="media" selected>Desorden normal</option>
+        <option value="alta">Mucho desorden</option>
+        <option value="nunca">Ninguno &mdash; entorno est&aacute;tico</option>
+      </select>
+      <p class="ayuda">No es una cadencia fija: el mundo va por <b>rachas y calmas</b>, y esto es solo la media alrededor de la que oscila. Limpiar una cuadr&iacute;cula no la deja limpia para siempre.</p>
+    </div>
+
+    <div class="campo">
+      <label for="meta">Meta de limpieza</label>
+      <select id="meta">
+        <option value="aleatoria" selected>Aleatoria (entre 5 y 12)</option>
+        <option value="4">4 unidades</option>
+        <option value="6">6 unidades</option>
+        <option value="8">8 unidades</option>
+        <option value="12">12 unidades</option>
+      </select>
+      <p class="ayuda">Es la carga de trabajo de la sesi&oacute;n. Cumplida la meta deja de aparecer desorden, y el agente da una ronda final: solo se recoge cuando adem&aacute;s ha comprobado que <b>A, B y C est&aacute;n limpias a la vez</b>.</p>
+    </div>
+
+    <div class="campo">
+      <label for="velocidad">Velocidad de la simulaci&oacute;n</label>
+      <div class="fila-rango">
+        <input type="range" id="velocidad" min="60" max="1400" step="20" value="500">
+        <output id="velocidadValor">500 ms</output>
+      </div>
+    </div>
+
+    <div class="botones">
+      <button id="btnNuevo" class="secundario" type="button">Nuevo mundo</button>
+      <button id="btnPaso" class="secundario" type="button">Paso a paso</button>
+      <button id="btnReiniciar" class="secundario" type="button">Reiniciar</button>
+      <button id="btnEjecutar" class="secundario" type="button">Ejecutar este</button>
+    </div>
+
+    <p class="semilla">Semilla del escenario: <code id="semilla">—</code></p>
+  </section>
+
+  <!-- ------------------------------------------------------------- -->
+  <!-- Escenario y resultados                                         -->
+  <!-- ------------------------------------------------------------- -->
+  <section class="escenario">
+
+    <div class="tarjeta" id="tarjetaResultado" hidden>
+      <h2 id="tituloResultado">—</h2>
+      <p id="detalleResultado">—</p>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Medida de rendimiento</h2>
+      <p class="ayuda formula">
+        Un punto por cada cuadr&iacute;cula que est&eacute; limpia en cada uno de los
+        <b id="horizonteTexto">60</b> pasos de tiempo evaluados, menos 1 punto por cada movimiento.
+        En un entorno din&aacute;mico esto no premia <i>haber limpiado</i> una vez, sino
+        <b>mantener limpio</b> el espacio a lo largo del tiempo.
+      </p>
+      <div class="marcadores">
+        <div class="marcador destacado">
+          <span class="valor" id="mRendimiento">0</span>
+          <span class="nombre">Rendimiento</span>
+        </div>
+        <div class="marcador">
+          <span class="valor" id="mPasos">0</span>
+          <span class="nombre">Pasos</span>
+        </div>
+        <div class="marcador">
+          <span class="valor" id="mAspirados">0</span>
+          <span class="nombre">Aspirados</span>
+        </div>
+        <div class="marcador">
+          <span class="valor" id="mMovimientos">0</span>
+          <span class="nombre">Movimientos</span>
+        </div>
+        <div class="marcador">
+          <span class="valor" id="mChoques">0</span>
+          <span class="nombre">Choques</span>
+        </div>
+        <div class="marcador">
+          <span class="valor" id="mRecargas">0</span>
+          <span class="nombre">Recargas</span>
+        </div>
+        <div class="marcador">
+          <span class="valor" id="mBasura">0</span>
+          <span class="nombre">Basura nueva</span>
+        </div>
+        <div class="marcador">
+          <span class="valor" id="mBloqueos">0</span>
+          <span class="nombre">Bloqueos</span>
+        </div>
+        <div class="marcador">
+          <span class="valor" id="mLimpias">0/3</span>
+          <span class="nombre">Limpias ahora</span>
+        </div>
+        <div class="marcador">
+          <span class="valor" id="mMeta">0</span>
+          <span class="nombre">Meta sorteada</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Secuencia de percepciones</h2>
+      <div class="tabla-envoltura">
+        <table class="tabla-percepciones">
+          <thead>
+            <tr>
+              <th class="col-paso">#</th>
+              <th>Secuencia de percepciones</th>
+              <th>Acci&oacute;n</th>
+              <th>Efecto en el mundo</th>
+            </tr>
+          </thead>
+          <tbody id="cuerpoTabla">
+            <tr class="vacia"><td colspan="4">Pulsa <b>Iniciar</b> para comenzar.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Funci&oacute;n del agente</h2>
+      <pre class="codigo">funci&oacute;n AGENTE-ASPIRADORA([localizaci&oacute;n, estado, bater&iacute;a]) devuelve una acci&oacute;n
+  si hubo choque entonces invertir el sentido de avance
+
+  si la bater&iacute;a est&aacute; por debajo del umbral entonces
+     si est&aacute; en el muelle entonces devolver <i>Cargar</i>
+     de otra forma, avanzar hacia el muelle
+
+  si estado = <i>Sucio</i> entonces
+     anotar que ya no consta que todo est&eacute; limpio
+     devolver <i>Aspirar</i>
+
+  anotar esta habitaci&oacute;n como vista limpia
+
+  si ya aspir&oacute; las unidades de su meta Y le constan limpias A, B y C entonces
+     si est&aacute; en el muelle entonces devolver <i>Nada</i>   (el programa finaliza)
+     de otra forma, encaminarse al muelle
+
+  si le constan limpias A, B y C Y le falta bater&iacute;a entonces
+     encaminarse al muelle y ponerse a <i>Cargar</i>
+
+  si se alcanz&oacute; el n&uacute;mero de intentos sin suciedad entonces devolver <i>Nada</i>
+
+  de otra forma, elegir a d&oacute;nde ir:
+     entre las salidas de esta cuadr&iacute;cula, quedarse con las habitaciones que
+     NO le constan limpias; si no queda ninguna, con las habitaciones sin m&aacute;s
+     (el muelle no se patrulla); descartar deshacer el paso que acaba de dar
+     y, entre las que empaten, elegir <b>al azar</b></pre>
+      <p class="ayuda">
+        El n&uacute;cleo sigue siendo la regla del enunciado &mdash; <i>si la cuadr&iacute;cula est&aacute; sucia, aspirar;
+        de otra forma, cambiar de cuadr&iacute;cula</i>. Pero <b>cambiar de cuadr&iacute;cula ya no es rebotar</b> de
+        derecha a izquierda: el plano es una T y el agente decide a d&oacute;nde ir con criterio, yendo a por lo
+        que no le consta limpio y eligiendo al azar entre lo que le empata, de modo que no recorre siempre
+        el mismo circuito. Para volver al muelle calcula el <b>camino m&aacute;s corto</b>, rodeando lo que sabe
+        bloqueado; y si no hay forma de rodearlo, se planta delante del obst&aacute;culo a esperar a que se
+        levante en vez de rendirse.
+      </p>
+      <p class="ayuda">
+        Todo eso sale de su <b>modelo interno</b>: d&oacute;nde est&aacute; el muelle, cu&aacute;nta bater&iacute;a le queda, cu&aacute;nta
+        suciedad lleva aspirada, contra qu&eacute; ha chocado y <b>qu&eacute; habitaciones le constan limpias</b>. Ese
+        &uacute;ltimo dato es el que le permite saber si ya puede recogerse: como solo percibe la cuadr&iacute;cula en la
+        que est&aacute;, para afirmar que <i>todo</i> qued&oacute; limpio tiene que haberlas visto limpias todas desde la
+        &uacute;ltima vez que encontr&oacute; suciedad.
+      </p>
+    </div>
+
+  </section>
+</main>
+
+<footer class="pie">
+  Inteligencia Artificial &middot; Agente inteligente en el mundo de la aspiradora
+</footer>
+
+<script src="js/mundo.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
