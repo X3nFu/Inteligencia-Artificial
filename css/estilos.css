@@ -106,15 +106,6 @@ body {
   color: var(--texto-suave);
 }
 
-.cabecera-tarjeta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.cabecera-tarjeta h2 { margin-bottom: .9rem; }
-
 /* --------------------------------------------------------------- */
 /* Controles                                                        */
 /* --------------------------------------------------------------- */
@@ -140,22 +131,6 @@ select {
   border: 1px solid var(--borde);
   background: var(--fondo);
   color: var(--texto);
-}
-
-.casillas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .35rem .9rem;
-  margin-top: .5rem;
-}
-
-.casillas label {
-  font-size: .84rem;
-  color: var(--texto-suave);
-  display: inline-flex;
-  align-items: center;
-  gap: .3rem;
-  cursor: pointer;
 }
 
 .fila-rango {
@@ -218,8 +193,6 @@ button.grande {
   font-size: .95rem;
   margin-bottom: .1rem;
 }
-
-.ayuda.centrado { text-align: center; margin-bottom: 1.3rem; }
 
 .semilla {
   margin: .9rem 0 0;
@@ -306,8 +279,6 @@ button.grande {
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
-.globo.sucio     { background: var(--sucio); }
-.globo.sucio::after     { border-top-color: var(--sucio); }
 .globo.limpiando { background: var(--limpio); }
 .globo.limpiando::after { border-top-color: var(--limpio); }
 .globo.energia   { background: var(--acento); }
@@ -320,8 +291,8 @@ button.grande {
 /* --------------------------------------------------------------- */
 
 /*
- * El plano es una T: A, B y C en la fila de abajo y D encima de B. Cada
- * cuadricula se coloca en su celda de la rejilla desde js/ui.js.
+ * El plano se sortea en cada corrida y forma una T o una L. Cada cuadricula
+ * se coloca en su fila y columna desde js/ui.js.
  */
 .mundo {
   display: grid;

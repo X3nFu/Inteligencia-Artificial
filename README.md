@@ -31,13 +31,14 @@ Encima de la aspiradora hay un **globo de diálogo** que va contando lo que est�
 | *Todo limpio, vuelvo al muelle* | ha cumplido las dos condiciones y se retira |
 | *¡Trabajo terminado!* | ha llegado al muelle y el programa finaliza |
 
-Los ajustes, las métricas y la tabla de percepciones están detrás de **«Ver detalles y ajustes»**,
-al pie de la pantalla. Ahí siguen todos los valores configurables que pide el enunciado, para poder
-fijar un caso concreto y estudiarlo.
+No hay más controles a la vista. Los valores configurables que pide el enunciado siguen en el
+documento —en un bloque oculto del que la simulación los lee— pero no se muestran: **cada arranque
+los sortea todos**. Para volver a exponerlos basta con quitar el atributo `hidden` del bloque
+`#detalles` en `index.html`.
 
 ## El mundo
 
-El espacio cerrado rectangular está dividido en tres localizaciones colocadas en línea:
+El espacio cerrado se reparte en cuatro cuadrículas, y su disposición cambia en cada corrida:
 
 ```
         +-------+                          +-------+
@@ -61,8 +62,8 @@ las seis ordenaciones posibles y las tres posiciones del muelle, todas con la mi
 
 Eso cambia el problema de verdad: **el agente no puede dar por sabido el plano** ni memorizar un
 recorrido. Tiene que orientarse en el que le toque, y calcular sobre la marcha el camino más corto
-al muelle. Con la opción *«Fija»* vuelve el plano de siempre, `A | B | C` con `D` encima de `B`,
-útil para estudiar un caso concreto con calma.
+al muelle. La configuración admite también un plano fijo —`A | B | C` con `D` encima de `B`—, útil
+para estudiar un caso concreto con calma.
 
 A la cuadrícula del muelle **solo se llega subiendo desde la habitación de la que cuelga**, así que
 esa habitación es el paso obligado hacia la recarga: por eso nunca puede surgir un bloqueo nuevo
@@ -92,39 +93,42 @@ que oscila. Debajo del escenario se ve en todo momento si el mundo está en *rac
 Una de las cuadrículas puede quedar **ocupada** al azar (trama roja y un mueble). Bloquea el paso:
 la aspiradora choca contra ella y no puede cruzarla.
 
-**El bloqueo no está todo el tiempo.** Dura un número aleatorio de pasos (entre 4 y 12), y la
-cuadrícula muestra su cuenta atrás: `OCUPADA · 7`. Cuando se agota, la cuadrícula queda libre y la
+**El bloqueo no está todo el tiempo.** Dura un número aleatorio de pasos —y cada mundo sortea su
+propio rango, así que unas veces son bloqueos cortos y otras largos—, con la cuenta atrás a la
+vista sobre la cuadrícula: `OCUPADA · 7`. Cuando se agota, la cuadrícula queda libre y la
 aspiradora ya puede cruzar. Más adelante puede volver a surgir un bloqueo nuevo en otra
 cuadrícula. Es como si alguien moviera un mueble de sitio de vez en cuando.
 
 - Nunca aparece bajo la posición inicial de la aspiradora.
 - En el modo *«Aleatoria — puede no haber ninguna»* hay una probabilidad de que **no exista
   ninguna** al empezar, de modo que también salen corridas con el mundo A–B–C libre.
-- Mientras está en el medio (B), deja **incomunicadas** A y C: la aspiradora solo puede trabajar en
-  el lado donde esté… hasta que el bloqueo se levante.
+- Mientras cae sobre la habitación del medio, deja **incomunicadas** las dos de los extremos: la
+  aspiradora solo puede trabajar en el lado donde esté… hasta que el bloqueo se levante.
 - **Que esté ocupada no significa que esté limpia.** Si había suciedad, ahí sigue; y mientras dura
   el bloqueo también se puede ensuciar más, como se ensucia el suelo debajo de un mueble. Lo único
   que impide el bloqueo es que la aspiradora entre a limpiarla.
 - Un bloqueo nuevo **nunca deja el muelle inalcanzable** ni cae sobre la aspiradora: si pudiera, un
   simple azar del entorno la condenaría a morir de batería.
 
-Con la opción *«Permanente»* el bloqueo no se levanta nunca, que es útil para estudiar con calma el
-caso de las cuadrículas incomunicadas.
+La configuración admite un modo *permanente*, en el que el bloqueo no se levanta nunca. Sirve para
+estudiar el caso de las cuadrículas incomunicadas, y para ver el fallo que el bloqueo temporal
+evita: si cae sobre la habitación que da paso al muelle, la aspiradora queda encerrada sin poder
+recargar y acaba sin batería.
 
 ### El muelle de carga
 
 Cada acción gasta batería (moverse 5, aspirar 9, chocar 1). Cuando la batería baja del umbral, la
 aspiradora **deja lo que esté haciendo y vuelve al muelle** a recargar hasta llenarla, y luego
-retoma el trabajo. El muelle se coloca al azar, siempre en una cuadrícula a la que la aspiradora
-pueda llegar — si no, no podría recargar nunca.
+retoma el trabajo. El muelle está en la cuadrícula D, colgada de una habitación sorteada, y nunca
+puede bloquearse — si no, no podría recargar nunca.
 
 Si se quedara sin batería fuera del muelle, la simulación termina en fallo. Con los ajustes por
 defecto no ocurre nunca, y hay una prueba automática que lo verifica.
 
 ### La meta, y el requisito de dejarlo todo limpio
 
-Cada corrida sortea una **meta aleatoria** (entre 5 y 12 unidades de suciedad). Es la carga de
-trabajo de la sesión: mientras no se cumpla, el piso se sigue ensuciando.
+Cada corrida sortea una **meta aleatoria** de unidades de suciedad, dentro de un rango que también
+se sortea. Es la carga de trabajo de la sesión: mientras no se cumpla, el piso se sigue ensuciando.
 
 Cumplir la meta **no basta para terminar**. Hacen falta las dos cosas a la vez:
 
@@ -157,21 +161,24 @@ estarlo. Mientras siga bloqueada, el agente no puede afirmar que todo esté limp
 
 ## Valores configurables
 
+Todos se sortean en cada arranque; ninguno se muestra en pantalla. Esta es la tabla de lo que el
+motor acepta, para quien lea el código:
+
 | Configuración | Opciones |
 |---|---|
 | **a) Localización inicial de la aspiradora** | Aleatoria (por defecto), A, B o C |
 | **b) Suciedad inicial** | Aleatoria (por defecto), las tres, dos, una sola o ninguna |
-| **c) Intentos sin encontrar suciedad para finalizar** | De 1 a 20 |
+| **c) Intentos sin encontrar suciedad para finalizar** | De 1 a 25; cada arranque sortea entre 12 y 22 |
 | Distribución de las cuadrículas | Aleatoria (por defecto): se barajan A, B y C y se sortea de cuál cuelga el muelle. O fija: `A \| B \| C` con `D` encima de `B` |
 | Cuadrícula ocupada | Aleatoria (puede no haber ninguna), aleatoria (siempre hay una), ninguna, o fija en A, B o C. Nunca sobre la que da paso al muelle |
-| Duración del bloqueo | Temporal (dura entre 4 y 12 pasos y vuelve a surgir) o permanente |
+| Duración del bloqueo | Temporal, con un rango de duración sorteado en cada mundo, o permanente |
 | Ritmo al que aparece basura | Poco, normal o mucho desorden, o ninguno (entorno estático). Siempre por rachas |
-| Meta de limpieza | Aleatoria entre 5 y 12, o fija en 4, 6, 8 o 12 |
+| Meta de limpieza | Aleatoria dentro de un rango que también se sortea, o fija |
 | Velocidad de la simulación | De 60 ms a 1400 ms por paso |
 
-Dentro del panel de detalles están además **Ejecutar este**, **Paso a paso** (avanza un solo paso,
-para ver la decisión del agente en la tabla), **Nuevo mundo** y **Reiniciar** (repite el mismo
-escenario desde el principio). También funcionan la **barra espaciadora** y la **flecha derecha**.
+El bloque oculto conserva además los controles **Ejecutar este**, **Paso a paso** (avanza un solo
+paso, para ver la decisión del agente en la tabla), **Nuevo mundo** y **Reiniciar**. La **barra
+espaciadora** hace lo mismo que el botón y la **flecha derecha** avanza un paso.
 
 Cada escenario tiene una **semilla** visible: con la misma semilla la corrida se repite exactamente
 igual, incluida la basura que va apareciendo.
@@ -243,7 +250,7 @@ no le dice dónde está el muelle ni cuánto lleva limpiado. El agente mantiene 
 
 > *Que las localizaciones queden limpias y después de esto el programa finalice.*
 
-Se puntúa con **un punto por cada cuadrícula que esté limpia en cada uno de los 60 pasos de tiempo
+Se puntúa con **un punto por cada habitación que esté limpia en cada uno de los 90 pasos de tiempo
 evaluados, menos 1 punto por cada movimiento**:
 
 ```
@@ -258,13 +265,14 @@ puntúa peor que una que siga patrullando.
 
 El **horizonte de tiempo fijo** es la otra pieza importante. Si solo se contaran los pasos que el
 agente decide dar, le convendría no parar nunca, porque cada paso extra sumaría puntos por las
-cuadrículas ya limpias. Midiendo siempre sobre los mismos 60 pasos, el mundo se queda como quedó
+cuadrículas ya limpias. Midiendo siempre sobre los mismos 90 pasos, el mundo se queda como quedó
 cuando el agente se detuvo y sigue contando; así **dejar todo limpio y terminar cuanto antes** es lo
 que más puntúa, que es justo lo que pide el enunciado.
 
-La interfaz muestra además pasos, aspirados, movimientos, choques, recargas, basura aparecida y
-bloqueos surgidos, las barras de batería, avance de la meta y requisito de «todo limpio», y la
-tabla completa de **secuencia de percepciones → acción**.
+Bajo el escenario se ven en todo momento las barras de **batería**, **avance de la meta** y
+**requisito: todo limpio**, además del ritmo al que está apareciendo el desorden. El bloque oculto
+guarda el resto de métricas —pasos, aspirados, movimientos, choques, recargas, basura aparecida y
+bloqueos surgidos— y la tabla completa de **secuencia de percepciones → acción**.
 
 ## Estructura del proyecto
 

@@ -2,20 +2,21 @@
  * mundo.js — Motor de simulacion del Mundo de la Aspiradora
  *
  * Contiene la logica pura del ejercicio, sin nada de interfaz grafica:
- *   - El mundo: las habitaciones A, B y C en linea, y encima de B la
- *     cuadricula D con el muelle de carga. Bloqueos temporales y desorden
- *     que aparece a rachas.
+ *   - El mundo: las habitaciones A, B y C, mas la cuadricula D con el muelle
+ *     de carga. Bloqueos temporales y desorden que aparece a rachas.
  *   - El agente basado en modelo (AGENTE-ASPIRADORA).
  *   - La medida de rendimiento.
  *
- * El plano ya no es una linea, sino una T:
+ * El plano no es una linea, y ademas se sortea en cada corrida: las tres
+ * habitaciones se barajan y el muelle se cuelga encima de una de ellas, de
+ * modo que sale una T o una L. Dos de los planos posibles:
  *
- *            +-----+
- *            |  D  |        D = muelle de carga
- *            +-----+
- *      +-----+-----+-----+
- *      |  A  |  B  |  C  |  habitaciones que hay que mantener limpias
- *      +-----+-----+-----+
+ *            +-----+                 +-----+
+ *            |  D  |                 |  D  |       D = muelle de carga
+ *            +-----+                 +-----+
+ *      +-----+-----+-----+     +-----+-----+-----+
+ *      |  C  |  A  |  B  |     |  B  |  C  |  A  | habitaciones que limpiar
+ *      +-----+-----+-----+     +-----+-----+-----+
  *
  * Para dar el trabajo por terminado se exigen DOS cosas a la vez:
  *   1. haber aspirado las unidades de suciedad de su meta, y
@@ -54,8 +55,9 @@
   // Las habitaciones que hay que mantener limpias.
   var CELDAS = ['A', 'B', 'C'];
 
-  // Cuadricula dedicada al muelle de carga, encima de B. No es una habitacion:
-  // ahi no se ensucia nada y no cuenta para el "todo limpio".
+  // Cuadricula dedicada al muelle de carga, colgada encima de una habitacion.
+  // No es una habitacion: ahi no se ensucia nada, no puede bloquearse y no
+  // cuenta para el "todo limpio".
   var CELDA_MUELLE = 'D';
 
   // Cada cuanto vuelve a aparecer basura (probabilidad media por paso).

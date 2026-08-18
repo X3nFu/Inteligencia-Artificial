@@ -255,7 +255,7 @@
 
   function limpiarTabla() {
     ctrl.cuerpoTabla.innerHTML =
-      '<tr class="vacia"><td colspan="4">Pulsa <b>Todo al azar y ejecutar</b> para comenzar.</td></tr>';
+      '<tr class="vacia"><td colspan="4">Pulsa <b>Iniciar</b> para comenzar.</td></tr>';
   }
 
   function agregarFila(registro) {
