@@ -296,10 +296,9 @@ button.grande {
  */
 .mundo {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(2, auto);
   gap: 6px;
   background: transparent;
+  /* Las filas y columnas las fija js/ui.js según el plano que toque. */
 }
 
 .escena .mundo { max-width: 660px; margin: 0 auto; }

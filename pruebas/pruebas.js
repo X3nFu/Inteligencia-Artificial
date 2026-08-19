@@ -1,10 +1,13 @@
 /*
- * pruebas.js — Pruebas automaticas del motor de simulacion.
- * Ejecutar con:  node pruebas/pruebas.js
+ * pruebas.js — Pruebas automaticas del motor.
+ * Se corren abriendo pruebas/pruebas.html, o con: node pruebas/pruebas.js
  */
 'use strict';
 
-var M = require('../js/mundo.js');
+// El motor se carga de donde haya: Node o navegador.
+var M = (typeof require === 'function')
+  ? require('../js/mundo.js')
+  : window.MundoAspiradora;
 
 var fallos = 0;
 var total = 0;
@@ -842,6 +845,7 @@ console.log('\nRepetibilidad y robustez');
 console.log('\n' + (total - fallos) + '/' + total + ' comprobaciones correctas.');
 if (fallos > 0) {
   console.log(fallos + ' fallaron.\n');
-  process.exit(1);
+  if (typeof process !== 'undefined' && process.exit) process.exit(1);
+} else {
+  console.log('Todo en orden.\n');
 }
-console.log('Todo en orden.\n');

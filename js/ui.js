@@ -8,6 +8,22 @@
   var M = window.MundoAspiradora;
   var $ = function (id) { return document.getElementById(id); };
 
+  /*
+   * PARA FIJAR ALGO EN UNA DEMOSTRACION: descomenta la linea que haga falta.
+   * Lo que se ponga aqui manda sobre el sorteo; el resto sigue al azar.
+   */
+  var AJUSTES_FIJOS = {
+    // inicio: 'A',                    // 'A' | 'B' | 'C' | 'aleatoria'
+    // suciedad: 'todas',              // 'todas'|'dos'|'una'|'ninguna'|'aleatoria'
+    // planoAleatorio: false,          // false = plano fijo A | B | C con D encima de B
+    // obstaculo: 'B',                 // 'aleatorio'|'aleatorio-siempre'|'ninguno'|'A'|'B'|'C'
+    // duracionBloqueo: 'permanente',  // 'temporal' | 'permanente'
+    // ritmoBasura: 'nunca',           // 'nunca'|'baja'|'media'|'alta'
+    // basuraTrasLaMeta: true,         // true = no deja de ensuciarse nunca
+    // meta: 6,                        // un numero, o 'aleatoria'
+    // maxIntentosSinSuciedad: 8       // intentos sin encontrar suciedad para parar
+  };
+
   var sim = null;
   var temporizador = null;
   var enMarcha = false;
@@ -110,10 +126,7 @@
     return g;
   }
 
-  /*
-   * Lo que "dice" la aspiradora en cada paso, segun el motivo de su decision.
-   * Es la forma mas directa de ver por que hace lo que hace.
-   */
+  // Lo que "dice" la aspiradora, segun el motivo de su decision.
   var FRASES = {
     aspirar:      { texto: '¡Sucio! Aspirando',        clase: 'limpiando' },
     cargando:     { texto: 'Cargando…',                clase: 'energia' },
@@ -136,6 +149,16 @@
   function dibujarMundo(opciones) {
     opciones = opciones || {};
     ctrl.mundo.innerHTML = '';
+
+    // La rejilla se adapta al plano que haya: si algun dia el mundo tiene mas
+    // habitaciones, basta con añadirlas a CELDAS en js/mundo.js.
+    var columnas = 1, filas = 1;
+    sim.celdas.forEach(function (celda) {
+      if (celda.columna > columnas) columnas = celda.columna;
+      if (celda.fila > filas) filas = celda.fila;
+    });
+    ctrl.mundo.style.gridTemplateColumns = 'repeat(' + columnas + ', 1fr)';
+    ctrl.mundo.style.gridTemplateRows = 'repeat(' + filas + ', auto)';
 
     sim.celdas.forEach(function (celda, indice) {
       var div = document.createElement('div');
@@ -359,16 +382,9 @@
   }
 
   /*
-   * Sortea un escenario nuevo y lo pone en marcha: es lo que hace "Iniciar".
-   *
-   * No queda nada fijo. Ademas de lo que ya era aleatorio (plano, posicion
-   * inicial, suciedad, obstaculo y meta), en cada arranque se sortean tambien
-   * el ritmo del desorden, cuanto duran los bloqueos, con que frecuencia
-   * surgen y cuantos intentos sin encontrar suciedad hacen falta para parar.
-   *
-   * Lo unico que se deja fijo a proposito es que los bloqueos sean temporales:
-   * hacerlos permanentes a veces encierra a la aspiradora lejos del muelle y
-   * la condena a quedarse sin bateria sin que haya hecho nada mal.
+   * "Iniciar": sortea un escenario nuevo y lo arranca. No queda nada fijo,
+   * salvo que los bloqueos sean temporales — permanentes pueden encerrar a la
+   * aspiradora lejos del muelle y dejarla sin bateria sin culpa suya.
    */
   function iniciarAlAzar() {
     detener();
@@ -411,15 +427,11 @@
       ritmoBasura: ctrl.ritmo.value,
       meta: (meta === 'aleatoria') ? 'aleatoria' : Number(meta),
       maxIntentosSinSuciedad: extras.maxIntentosSinSuciedad || Number(ctrl.intentos.value)
-    });
+    }, AJUSTES_FIJOS);   // lo fijado a mano manda sobre el sorteo
   }
 
-  /*
-   * Genera un escenario nuevo. Si se pasa una semilla se reconstruye el mismo
-   * escenario (se usa al cambiar ajustes que no deben re-sortear el mundo).
-   * Ojo: esta funcion se llama desde manejadores de eventos, asi que solo se
-   * acepta una semilla si de verdad es un numero.
-   */
+  // Genera un escenario nuevo, o repite uno si se le pasa su semilla. Solo
+  // acepta numeros: tambien la llaman manejadores de eventos.
   function nuevoMundo(semillaFija) {
     detener();
     var repetir = (typeof semillaFija === 'number' && isFinite(semillaFija));
@@ -456,11 +468,7 @@
   /* Enlace de eventos                                                 */
   /* ---------------------------------------------------------------- */
 
-  /*
-   * Un solo boton gobierna la vista principal: si no ha empezado o ya termino,
-   * sortea una corrida nueva; si esta corriendo, pausa; si esta en pausa,
-   * reanuda.
-   */
+  // Un solo boton: sortea una corrida nueva, pausa o reanuda segun toque.
   ctrl.btnIniciar.addEventListener('click', function () {
     if (enMarcha) { pausar(); return; }
     if (sim.terminado || sim.metricas.pasos === 0) { iniciarAlAzar(); return; }

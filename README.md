@@ -277,16 +277,22 @@ bloqueos surgidos— y la tabla completa de **secuencia de percepciones → acci
 ## Estructura del proyecto
 
 ```
-index.html          Interfaz y estructura de la página
-css/estilos.css     Presentación del escenario y los paneles
-js/mundo.js         Motor: el mundo, el agente y la medida de rendimiento
-js/ui.js            Parte gráfica: dibuja el escenario y controla la simulación
-pruebas/pruebas.js  Pruebas automáticas del motor
+index.html            Interfaz y estructura de la página
+css/estilos.css       Presentación del escenario y los paneles
+js/mundo.js           Motor: el mundo, el agente y la medida de rendimiento
+js/ui.js              Parte gráfica: dibuja el escenario y controla la simulación
+pruebas/pruebas.js    Pruebas automáticas del motor
+pruebas/pruebas.html  Las mismas pruebas, ejecutables en el navegador
 ```
 
 `js/mundo.js` no depende del navegador, así que la lógica del agente se puede probar por separado.
 
 ## Pruebas
+
+La forma más simple, sin instalar nada: abre **`pruebas/pruebas.html`** con doble clic. Corre las
+mismas comprobaciones que la versión de terminal y muestra el marcador arriba.
+
+Si tienes [Node.js](https://nodejs.org) instalado, también valen desde una terminal:
 
 ```
 node pruebas/pruebas.js

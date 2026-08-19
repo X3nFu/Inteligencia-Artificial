@@ -1,32 +1,12 @@
 /*
- * mundo.js — Motor de simulacion del Mundo de la Aspiradora
+ * mundo.js — Motor de simulacion del Mundo de la Aspiradora.
  *
- * Contiene la logica pura del ejercicio, sin nada de interfaz grafica:
- *   - El mundo: las habitaciones A, B y C, mas la cuadricula D con el muelle
- *     de carga. Bloqueos temporales y desorden que aparece a rachas.
- *   - El agente basado en modelo (AGENTE-ASPIRADORA).
- *   - La medida de rendimiento.
+ * El mundo, el agente y la medida de rendimiento. No usa el navegador, asi
+ * que tambien se puede cargar desde Node para las pruebas.
  *
- * El plano no es una linea, y ademas se sortea en cada corrida: las tres
- * habitaciones se barajan y el muelle se cuelga encima de una de ellas, de
- * modo que sale una T o una L. Dos de los planos posibles:
- *
- *            +-----+                 +-----+
- *            |  D  |                 |  D  |       D = muelle de carga
- *            +-----+                 +-----+
- *      +-----+-----+-----+     +-----+-----+-----+
- *      |  C  |  A  |  B  |     |  B  |  C  |  A  | habitaciones que limpiar
- *      +-----+-----+-----+     +-----+-----+-----+
- *
- * Para dar el trabajo por terminado se exigen DOS cosas a la vez:
- *   1. haber aspirado las unidades de suciedad de su meta, y
- *   2. que las habitaciones hayan quedado TODAS limpias.
- * Como el agente solo percibe la cuadricula en la que esta, para saber lo
- * segundo tiene que haberlas visto limpias todas desde la ultima vez que
- * encontro suciedad.
- *
- * Se puede usar desde el navegador (window.MundoAspiradora) o desde Node
- * (require('./js/mundo.js')) para las pruebas automaticas.
+ * Las habitaciones A, B y C van en fila y el muelle D se cuelga encima de una
+ * de ellas; el plano se sortea en cada corrida. Para terminar hacen falta dos
+ * cosas: cumplir la meta de suciedad y que las tres queden limpias.
  */
 (function (raiz) {
   'use strict';
@@ -103,16 +83,8 @@
   /* Utilidades                                                          */
   /* ------------------------------------------------------------------ */
 
-  /*
-   * Generador pseudoaleatorio con semilla: permite repetir exactamente una
-   * corrida (util para comparar resultados y para las pruebas).
-   *
-   * La semilla se mezcla antes de empezar. Sin esa mezcla, semillas parecidas
-   * (1, 2, 3...) producen primeras salidas parecidas, y como el sorteo del
-   * plano y de la posicion inicial se hace justo con esas primeras salidas, el
-   * mundo salia sesgado: de los seis ordenes posibles de A, B y C solo
-   * aparecian dos.
-   */
+  // Generador con semilla, para poder repetir una corrida. La semilla se
+  // mezcla primero: sin eso, semillas parecidas daban mundos parecidos.
   function crearAzar(semilla) {
     var s = (semilla >>> 0) || 1;
     s = (s ^ 0x9e3779b9) >>> 0;
@@ -137,18 +109,9 @@
   }
 
   /*
-   * El plano del mundo: que cuadriculas hay, donde se dibuja cada una y a que
-   * vecina se llega con cada movimiento.
-   *
-   * Si se le pasa un generador `azar`, el plano se sortea en cada corrida:
-   *   - las tres habitaciones se barajan, asi que A, B y C no salen siempre en
-   *     ese orden de izquierda a derecha;
-   *   - el muelle D se cuelga encima de una habitacion elegida al azar, no
-   *     siempre de la del medio.
-   *
-   * Eso cambia de verdad el problema: el agente no puede dar por sabido el
-   * plano ni memorizar un recorrido, tiene que orientarse en el que le toque.
-   * Sin `azar` sale el plano fijo de siempre: A | B | C con D encima de B.
+   * Que cuadriculas hay, donde se dibuja cada una y a que vecina lleva cada
+   * movimiento. Con `azar` se baraja el orden de las habitaciones y de cual
+   * cuelga el muelle; sin el sale el plano fijo A | B | C con D encima de B.
    */
   function construirPlano(muelleAparte, azar) {
     var orden = CELDAS.slice();
@@ -197,24 +160,10 @@
   /*
    * AGENTE-ASPIRADORA — agente basado en modelo.
    *
-   * El nucleo sigue siendo la regla del enunciado:
-   *   si la cuadricula en la que se encuentra esta sucia -> Aspirar
-   *   de otra forma                                      -> cambiar de cuadricula
-   *
-   * Pero "cambiar de cuadricula" ya no es rebotar de derecha a izquierda. El
-   * plano es una T y el agente decide a donde ir con criterio:
-   *   - va a por las habitaciones que NO le constan limpias, que son las
-   *     unicas donde puede haber algo que aspirar;
-   *   - evita deshacer el paso que acaba de dar, si le queda alternativa;
-   *   - entre las opciones que quedan empatadas elige al azar, para no
-   *     recorrer siempre el mismo circuito;
-   *   - no patrulla el muelle, porque ahi nunca hay nada que limpiar.
-   *
-   * Y tiene comportamientos automaticos que salen de su modelo del mundo:
-   *   - si la bateria baja del umbral, deja lo que sea y vuelve a cargar;
-   *   - si ve que esta todo limpio y aun le falta bateria, aprovecha para
-   *     subir al muelle a repostar en lugar de dar vueltas en balde;
-   *   - si esta todo limpio y ya cumplio su meta, se recoge en el muelle.
+   * Mantiene la regla del enunciado (si esta sucio aspirar, si no cambiar de
+   * cuadricula) dentro de una lista de prioridades, y guarda un modelo del
+   * mundo: el plano, donde esta el muelle y que habitaciones le constan
+   * limpias. Sin ese modelo no podria saber cuando ha terminado.
    */
   function crearAgente(config) {
     var muelle = config.muelleNombre;        // nombre de la cuadricula con el muelle
@@ -234,12 +183,9 @@
     var bloqueadas = {};      // habitaciones contra las que ha chocado
     var esperando = 0;        // pasos que lleva esperando a que se libere un paso
 
-    /*
-     * Primer movimiento del camino mas corto hasta `destino`. Primero busca
-     * rodeando lo que le consta bloqueado; si asi no hay camino, lo vuelve a
-     * buscar ignorando los bloqueos, de modo que se planta delante del
-     * obstaculo y espera a que se levante en vez de rendirse.
-     */
+    // Primer paso del camino mas corto hasta `destino`, rodeando lo que le
+    // consta bloqueado. Si no hay forma de rodearlo, lo busca ignorandolo:
+    // asi se planta delante del obstaculo a esperar en vez de rendirse.
     function primerPasoHacia(destino, desde, esquivar) {
       var cola = [{ celda: desde, primera: null }];
       var vistos = {};
@@ -269,14 +215,9 @@
     }
 
     /*
-     * ¿Cree el agente que esta todo limpio? Solo si, desde la ultima vez que
-     * encontro suciedad, ha visto limpia cada habitacion CON SUS PROPIOS
-     * SENSORES.
-     *
-     * Una cuadricula ocupada no cuenta como comprobada: que no pueda entrar no
-     * dice nada sobre si esta sucia, y de hecho puede estarlo. Mientras siga
-     * bloqueada el agente no puede afirmar que todo este limpio, asi que sigue
-     * trabajando hasta que el bloqueo se levante y pueda ir a verla.
+     * Solo le consta que todo esta limpio si ha visto limpia cada habitacion
+     * desde la ultima suciedad que encontro. Haber chocado contra una no
+     * cuenta: no poder entrar no dice nada sobre si esta sucia.
      */
     function creeQueTodoEstaLimpio() {
       return habitaciones.every(function (nombre) {
@@ -383,15 +324,9 @@
           return ACCIONES.ASPIRAR;
         }
 
-        /*
-         * Esta habitacion consta como limpia. El muelle no cuenta.
-         *
-         * El contador de intentos sin encontrar suciedad se pausa mientras haya
-         * una habitacion bloqueada que aun no haya podido comprobar: eso no es
-         * "no encuentro nada que limpiar", es "todavia no he podido mirar", y
-         * rendirse ahi seria darla por limpia sin haberla visto. Como los
-         * bloqueos son temporales, basta con esperar a que se levante.
-         */
+        // El contador de intentos se pausa mientras quede una habitacion
+        // bloqueada por comprobar: eso no es "no encuentro nada", es "todavia
+        // no he podido mirar". Los bloqueos son temporales, asi que espera.
         var pendienteBloqueada = habitaciones.some(function (nombre) {
           return bloqueadas[nombre] && !vistasLimpias[nombre];
         });
@@ -607,14 +542,8 @@
 
   /* ---------------- Bloqueo temporal de una cuadricula ---------------- */
 
-  /*
-   * Ocupa una cuadricula durante `duracion` pasos.
-   *
-   * Que este ocupada NO significa que este limpia: si habia suciedad, ahi
-   * sigue, solo que la aspiradora no puede entrar a por ella. Y mientras esta
-   * ocupada tambien se puede ensuciar, como se ensucia el suelo debajo de un
-   * mueble. Cuando el bloqueo se levante habra que volver a limpiarla.
-   */
+  // Ocupa una cuadricula durante `duracion` pasos. Ocupada no significa
+  // limpia: la suciedad sigue ahi y puede ensuciarse mas mientras tanto.
   Simulacion.prototype.bloquear = function (indice, duracion) {
     this.celdas[indice].ocupada = true;
     this.bloqueo = { celda: indice, restante: duracion, duracion: duracion };
@@ -628,12 +557,8 @@
     return this.celdas[indice].nombre;
   };
 
-  /*
-   * Cuadriculas donde puede surgir un bloqueo nuevo. Se descartan el muelle, la
-   * casilla donde esta la aspiradora y todas las del camino que las une: si se
-   * bloqueara una de esas, la aspiradora se quedaria sin poder recargar y
-   * moriria de bateria por un puro azar del entorno.
-   */
+  // Donde puede surgir un bloqueo nuevo: en nada del camino entre la
+  // aspiradora y el muelle, o se quedaria sin poder recargar.
   Simulacion.prototype.celdasBloqueables = function () {
     var camino = this.caminoEntre(this.posicion, this.muelle) || [this.posicion, this.muelle];
     var libres = [];
@@ -716,11 +641,9 @@
   };
 
   /*
-   * La meta es la carga de trabajo de la sesion: mientras no se haya cumplido,
-   * el piso se sigue ensuciando. Una vez cumplida deja de aparecer basura
-   * nueva, y entonces la aspiradora puede dar la ronda final, comprobar que
-   * todo esta limpio y recogerse. Sin eso, con basura apareciendo sin descanso,
-   * el requisito de "que haya quedado todo limpio" seria inalcanzable.
+   * Mientras no se cumpla la meta el piso se sigue ensuciando; cumplida, para.
+   * Sin esa pausa nunca habria un instante con las tres limpias y el requisito
+   * de "todo limpio" seria inalcanzable.
    */
   Simulacion.prototype.aparecerBasura = function () {
     var cfg = this.config;
