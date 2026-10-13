@@ -1,0 +1,176 @@
+/* estilos.css — Presentacion del perceptron de 4 entradas */
+
+:root {
+  --fondo: #eef1f6;
+  --superficie: #ffffff;
+  --superficie-2: #f6f8fc;
+  --borde: #d6dce7;
+  --texto: #1d2433;
+  --suave: #5b6678;
+  --acento: #2f6df6;
+  --bien: #2f9e6d;
+  --mal: #d5534f;
+  --mono: Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fondo: #12161f;
+    --superficie: #1a202c;
+    --superficie-2: #212936;
+    --borde: #2c3444;
+    --texto: #e8ecf4;
+    --suave: #9aa5b8;
+    --acento: #5b8dff;
+    --bien: #46bb87;
+    --mal: #e97671;
+  }
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  padding-bottom: 2rem;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  line-height: 1.5;
+}
+
+.cabecera {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  background: var(--superficie);
+  border-bottom: 1px solid var(--borde);
+}
+
+.cabecera h1 { margin: 0; font-size: 1.5rem; }
+.cabecera p  { margin: .2rem 0 0; color: var(--suave); }
+
+.pagina {
+  max-width: 980px;
+  margin: 1.2rem auto 0;
+  padding: 0 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.tarjeta {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 1rem 1.2rem 1.2rem;
+}
+
+h2 { margin: 0 0 .4rem; font-size: 1.1rem; display: flex; align-items: center; gap: .5rem; }
+h3 { margin: 1.2rem 0 .4rem; font-size: .95rem; color: var(--suave); }
+
+.paso {
+  display: inline-grid; place-items: center;
+  width: 1.5rem; height: 1.5rem; border-radius: 50%;
+  background: var(--acento); color: #fff; font-size: .8rem;
+}
+
+.nota { margin: .2rem 0 .8rem; color: var(--suave); font-size: .9rem; }
+code { font-family: var(--mono); }
+
+/* ---- botones ---- */
+
+.mandos { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
+.estado { color: var(--suave); }
+
+button {
+  font: inherit; cursor: pointer;
+  padding: .55rem 1rem; border-radius: 8px;
+  border: 1px solid var(--borde);
+  background: var(--superficie-2); color: var(--texto);
+}
+
+button.principal { background: var(--acento); border-color: var(--acento); color: #fff; font-weight: 600; }
+button:hover { border-color: var(--acento); }
+
+/* ---- valores iniciales ---- */
+
+.valores {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: .6rem;
+}
+
+.valor {
+  background: var(--superficie-2);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  padding: .5rem .7rem;
+  overflow-wrap: anywhere;
+}
+
+.valor span { display: block; font-size: .8rem; color: var(--suave); }
+.valor b { font-family: var(--mono); font-size: 1rem; }
+
+/* ---- intentos ---- */
+
+.intentos { list-style: none; padding: 0; margin: 0 0 .8rem; display: grid; gap: .4rem; }
+.intentos li { padding: .45rem .7rem; border-radius: 8px; background: var(--superficie-2); font-size: .9rem; }
+.intentos li.bien { border-left: 4px solid var(--bien); }
+.intentos li.mal  { border-left: 4px solid var(--mal); }
+
+/* ---- tablas ---- */
+
+.tabla-caja { overflow: auto; border: 1px solid var(--borde); border-radius: 8px; }
+.tabla-caja.alta { max-height: 360px; }
+
+table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+th, td { padding: .35rem .6rem; text-align: right; border-bottom: 1px solid var(--borde); white-space: nowrap; }
+td { font-family: var(--mono); }
+th { position: sticky; top: 0; background: var(--superficie); color: var(--suave); }
+th:first-child, td:first-child { text-align: left; }
+tr.final td { font-weight: 700; background: rgba(47, 158, 109, .1); }
+td.largo { white-space: normal; overflow-wrap: anywhere; max-width: 16rem; }
+
+.si { color: var(--bien); font-weight: 700; }
+.no { color: var(--mal); font-weight: 700; }
+
+/* ---- campos editables: sin limite de caracteres ---- */
+
+.campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: .6rem;
+  margin-bottom: .6rem;
+}
+
+.campos label { display: grid; gap: .2rem; font-size: .85rem; color: var(--suave); }
+
+.campos input {
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 1rem;
+  padding: .45rem .6rem;
+  border-radius: 8px;
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto);
+}
+
+.campos input:focus { outline: 2px solid var(--acento); outline-offset: -1px; }
+.campos input.malo { border-color: var(--mal); }
+
+.aviso { color: var(--mal); margin: 0 0 .6rem; font-size: .9rem; }
+
+/* ---- resultado de la prueba ---- */
+
+.resultado {
+  margin-top: .8rem;
+  padding: .8rem;
+  border-radius: 8px;
+  background: var(--superficie-2);
+  border: 1px solid var(--borde);
+  font-family: var(--mono);
+  font-size: .9rem;
+  overflow-wrap: anywhere;
+}
+
+.resultado .grande { font-size: 1.3rem; font-weight: 700; }

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perceptrón de 4 entradas</title>
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+<header class="cabecera">
+  <h1>Perceptrón de 4 entradas</h1>
+  <p>Compuerta lógica &mdash; Proyecto de redes neuronales</p>
+</header>
+
+<main class="pagina">
+
+  <section class="tarjeta mandos">
+    <button id="btnEntrenar" class="principal" type="button">Sortear valores y entrenar</button>
+    <span class="estado" id="estado"></span>
+  </section>
+
+  <!-- 1. Valores iniciales ------------------------------------------- -->
+  <section class="tarjeta">
+    <h2><span class="paso">1</span> Valores iniciales (aleatorios)</h2>
+    <p class="nota">Se sortean solos cada vez que se pulsa el botón: no hay que escribir nada.</p>
+    <div class="valores" id="valoresIniciales"></div>
+  </section>
+
+  <!-- 2. Entrenamiento ------------------------------------------------ -->
+  <section class="tarjeta">
+    <h2><span class="paso">2</span> Entrenamiento</h2>
+    <p class="nota">
+      Cada iteración revisa las 16 filas de la tabla y corrige los pesos si alguna falla.
+      El límite es <b>999 iteraciones</b>: si se pasa, el intento se cancela y se sortean
+      valores nuevos.
+    </p>
+    <ul class="intentos" id="intentos"></ul>
+    <p class="nota">
+      Esta tabla se muestra con 4 decimales sólo para que se pueda leer; los valores exactos,
+      sin redondear, están en los apartados 1 y 3.
+    </p>
+    <div class="tabla-caja alta">
+      <table>
+        <thead>
+          <tr><th>Iteración</th><th>ω₁</th><th>ω₂</th><th>ω₃</th><th>ω₄</th><th>θ</th><th>Errores</th></tr>
+        </thead>
+        <tbody id="tablaIteraciones"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 3. Salida --------------------------------------------------------- -->
+  <section class="tarjeta">
+    <h2><span class="paso">3</span> Salida: valores finales</h2>
+    <p class="nota">
+      Son los pesos y el umbral que aprendió la neurona. Se pueden cambiar a mano y todo se
+      recalcula al instante.
+    </p>
+    <div class="campos" id="camposPesos"></div>
+    <p class="aviso" id="avisoPesos" hidden></p>
+    <button id="btnRestaurar" class="secundario" type="button">Volver a los valores entrenados</button>
+
+    <h3>Comprobación con la tabla de la compuerta</h3>
+    <div class="tabla-caja">
+      <table>
+        <thead>
+          <tr><th>Fila</th><th>X₁</th><th>X₂</th><th>X₃</th><th>X₄</th>
+              <th>Y esperada</th><th>Y obtenida</th><th></th></tr>
+        </thead>
+        <tbody id="tablaComprobacion"></tbody>
+      </table>
+    </div>
+    <p class="nota" id="resumenComprobacion"></p>
+  </section>
+
+  <!-- 4. Probar con valores reales -------------------------------------- -->
+  <section class="tarjeta">
+    <h2><span class="paso">4</span> Probar con valores reales</h2>
+    <p class="nota">
+      Escribe cualquier número, con punto o con coma y con todos los decimales que quieras.
+      Como es una compuerta lógica, cada valor cuenta por su signo: <b>positivo es 1</b>, y
+      <b>cero o negativo es −1</b>. El número se lee completo, sin aproximarlo: por eso
+      <code>0,0000000000001</code> cuenta como 1 y no como cero.
+    </p>
+    <div class="campos" id="camposEntradas"></div>
+    <p class="aviso" id="avisoEntradas" hidden></p>
+    <button id="btnAzar" class="secundario" type="button">Poner valores al azar</button>
+
+    <div class="tabla-caja">
+      <table>
+        <thead>
+          <tr><th>Entrada</th><th>Valor escrito</th><th>Valor lógico</th>
+              <th>Peso</th><th>Valor lógico × Peso</th></tr>
+        </thead>
+        <tbody id="tablaPrueba"></tbody>
+      </table>
+    </div>
+    <div class="resultado" id="resultadoPrueba"></div>
+  </section>
+
+</main>
+
+<script src="js/perceptron.js"></script>
+<script src="js/interfaz.js"></script>
+</body>
+</html>
